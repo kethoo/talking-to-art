@@ -10,13 +10,6 @@ st.title("🖌️ Talk to a Painting")
 
 # -----------------------
 # Manual API key input
-# -----------------------
-api_key = st.text_input("🔑 Enter your OpenAI API key", type="password")
-
-if not api_key:
-    st.warning("Please enter your OpenAI API key to start chatting with the paintings.")
-    st.stop()
-
 # Initialize OpenAI client
 client = OpenAI(api_key=api_key)
 
