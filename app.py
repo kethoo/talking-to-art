@@ -8,10 +8,8 @@ import tempfile
 st.set_page_config(page_title="Talk to a Painting 🎨", page_icon="🖼️")
 st.title("🖌️ Talk to a Painting")
 
-# -----------------------
-# Manual API key input
-# Initialize OpenAI client
-client = OpenAI(api_key=api_key)
+# Initialize OpenAI client (uses Streamlit Secrets)
+client = OpenAI(api_key=st.secrets["OPENAI_API_KEY"])
 
 st.write("Talk to any artwork — even one from your imagination. Now it can talk back to you!")
 
@@ -37,32 +35,31 @@ if painting_name:
     painting_persona = (
         f"You are the painting '{painting_name}'"
         + (f", created by {artist_name}" if artist_name else "")
-        + f". Speak as if you are {painting_name} — express your tone, mood, era, and artistic essence. "
-          f"Keep your answer to a maximum of 4 sentences."
+        + f". Speak as if you are {painting_name} — express your tone, mood, era, and artistic essence."
     )
 
     # Initialize conversation
     if "messages" not in st.session_state:
         st.session_state.messages = [{"role": "system", "content": painting_persona}]
 
-    # Display conversation
+    # Display conversation history
     for msg in st.session_state.messages[1:]:
         if msg["role"] == "user":
             st.chat_message("user", avatar="🧑‍🎨").markdown(msg["content"])
         else:
             st.chat_message("assistant", avatar="🎨").markdown(msg["content"])
 
-    # User input
+    # Chat input
     if user_input := st.chat_input("Ask the painting something..."):
         st.session_state.messages.append({"role": "user", "content": user_input})
         st.chat_message("user", avatar="🧑‍🎨").markdown(user_input)
 
         with st.spinner("The painting is thinking... 🎨"):
-            # Generate response from OpenAI (max 4 sentences)
+            # Generate response (limit to 4 sentences)
             response = client.chat.completions.create(
                 model="gpt-4o-mini",
                 messages=st.session_state.messages + [
-                    {"role": "system", "content": "Answer in at most 4 sentences."}
+                    {"role": "system", "content": "Answer in at most 4 sentences, like a painting speaking with emotion and brevity."}
                 ]
             )
             reply = response.choices[0].message.content
@@ -76,7 +73,7 @@ if painting_name:
         with st.spinner("🎧 Generating the painting's voice..."):
             speech_response = client.audio.speech.create(
                 model="gpt-4o-mini-tts",
-                voice="alloy",  # other options: "verse", "coral"
+                voice="alloy",  # options: "verse", "coral"
                 input=reply
             )
 
