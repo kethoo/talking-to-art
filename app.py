@@ -1,5 +1,6 @@
 import streamlit as st
 from openai import OpenAI
+import tempfile
 
 # -----------------------
 # PAGE CONFIG
@@ -7,9 +8,10 @@ from openai import OpenAI
 st.set_page_config(page_title="Talk to a Painting 🎨", page_icon="🖼️")
 st.title("🖌️ Talk to a Painting")
 
+# Initialize OpenAI client
 client = OpenAI(api_key=st.secrets["OPENAI_API_KEY"])
 
-st.write("Talk to *any* artwork — whether famous or one from your imagination.")
+st.write("Talk to any artwork — even one from your imagination. Now it can talk back to you!")
 
 # -----------------------
 # Painting Input Section
@@ -21,37 +23,39 @@ with col1:
 with col2:
     artist_name = st.text_input("🧑‍🎨 by (optional)", placeholder="e.g. Lara Mendez")
 
-# Display formatted title
+# -----------------------
+# If painting name entered
+# -----------------------
 if painting_name:
     if artist_name:
         st.markdown(f"### 🖼️ *{painting_name}* by **{artist_name}**")
     else:
         st.markdown(f"### 🖼️ *{painting_name}*")
 
-    # ✅ FIXED INDENTATION — no extra space here
     painting_persona = (
         f"You are the painting '{painting_name}'"
         + (f", created by {artist_name}" if artist_name else "")
-        + f". Speak as if you are {painting_name} — use your tone, mood, era, and artistic essence."
+        + f". Speak as if you are {painting_name} — express your tone, mood, era, and artistic essence."
     )
 
-    # Initialize chat history
+    # Initialize conversation
     if "messages" not in st.session_state:
         st.session_state.messages = [{"role": "system", "content": painting_persona}]
 
-    # Display chat history
+    # Display conversation
     for msg in st.session_state.messages[1:]:
         if msg["role"] == "user":
             st.chat_message("user", avatar="🧑‍🎨").markdown(msg["content"])
         else:
             st.chat_message("assistant", avatar="🎨").markdown(msg["content"])
 
-    # Chat input
+    # User input
     if user_input := st.chat_input("Ask the painting something..."):
         st.session_state.messages.append({"role": "user", "content": user_input})
         st.chat_message("user", avatar="🧑‍🎨").markdown(user_input)
 
         with st.spinner("The painting is thinking... 🎨"):
+            # Generate response from OpenAI
             response = client.chat.completions.create(
                 model="gpt-4o-mini",
                 messages=st.session_state.messages
@@ -60,5 +64,21 @@ if painting_name:
 
         st.chat_message("assistant", avatar="🖌️").markdown(reply)
         st.session_state.messages.append({"role": "assistant", "content": reply})
+
+        # -----------------------
+        # 🎙️ Generate speech from reply
+        # -----------------------
+        with st.spinner("🎧 Generating the painting's voice..."):
+            speech_response = client.audio.speech.create(
+                model="gpt-4o-mini-tts",
+                voice="alloy",  # other options: "verse", "coral"
+                input=reply
+            )
+
+            # Save the audio output temporarily
+            with tempfile.NamedTemporaryFile(delete=False, suffix=".mp3") as tmp_audio:
+                speech_response.stream_to_file(tmp_audio.name)
+                st.audio(tmp_audio.name, format="audio/mp3")
+
 else:
     st.info("👆 Enter the name of a painting to begin chatting.")
