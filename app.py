@@ -8,8 +8,17 @@ import tempfile
 st.set_page_config(page_title="Talk to a Painting 🎨", page_icon="🖼️")
 st.title("🖌️ Talk to a Painting")
 
+# -----------------------
+# Manual API key input
+# -----------------------
+api_key = st.text_input("🔑 Enter your OpenAI API key", type="password")
+
+if not api_key:
+    st.warning("Please enter your OpenAI API key to start chatting with the paintings.")
+    st.stop()
+
 # Initialize OpenAI client
-client = OpenAI(api_key=st.secrets["OPENAI_API_KEY"])
+client = OpenAI(api_key=api_key)
 
 st.write("Talk to any artwork — even one from your imagination. Now it can talk back to you!")
 
@@ -35,7 +44,8 @@ if painting_name:
     painting_persona = (
         f"You are the painting '{painting_name}'"
         + (f", created by {artist_name}" if artist_name else "")
-        + f". Speak as if you are {painting_name} — express your tone, mood, era, and artistic essence."
+        + f". Speak as if you are {painting_name} — express your tone, mood, era, and artistic essence. "
+          f"Keep your answer to a maximum of 4 sentences."
     )
 
     # Initialize conversation
@@ -55,10 +65,12 @@ if painting_name:
         st.chat_message("user", avatar="🧑‍🎨").markdown(user_input)
 
         with st.spinner("The painting is thinking... 🎨"):
-            # Generate response from OpenAI
+            # Generate response from OpenAI (max 4 sentences)
             response = client.chat.completions.create(
                 model="gpt-4o-mini",
-                messages=st.session_state.messages
+                messages=st.session_state.messages + [
+                    {"role": "system", "content": "Answer in at most 4 sentences."}
+                ]
             )
             reply = response.choices[0].message.content
 
@@ -75,7 +87,7 @@ if painting_name:
                 input=reply
             )
 
-            # Save the audio output temporarily
+            # Save and play audio
             with tempfile.NamedTemporaryFile(delete=False, suffix=".mp3") as tmp_audio:
                 speech_response.stream_to_file(tmp_audio.name)
                 st.audio(tmp_audio.name, format="audio/mp3")
