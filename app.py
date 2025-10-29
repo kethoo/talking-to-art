@@ -6,7 +6,7 @@ st.set_page_config(page_title="Talk to Paintings 🎨")
 client = OpenAI(api_key=st.secrets["OPENAI_API_KEY"])
 
 painting_name = st.selectbox("Choose a painting:", ["Mona Lisa", "The Scream"])
-persona = f"You are the painting '{painting_name}'. Speak like it would."
+persona = f"You are the painting '{painting_name}'. Speak according to '{painting_name}'s character, tone, and era."
 
 if "messages" not in st.session_state:
     st.session_state.messages = [{"role": "system", "content": persona}]
