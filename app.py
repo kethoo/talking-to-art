@@ -28,12 +28,12 @@ if painting_name:
     else:
         st.markdown(f"### 🖼️ *{painting_name}*")
 
-       painting_persona = (
+    # ✅ FIXED INDENTATION — no extra space here
+    painting_persona = (
         f"You are the painting '{painting_name}'"
-        + (f", created by {artist_name}." if artist_name else ".")
-        + " Speak as if you are {painting_name} — use your tone, mood,era and artistic essence."
+        + (f", created by {artist_name}" if artist_name else "")
+        + f". Speak as if you are {painting_name} — use your tone, mood, era, and artistic essence."
     )
-
 
     # Initialize chat history
     if "messages" not in st.session_state:
